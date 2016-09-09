@@ -1,0 +1,467 @@
+﻿<!DOCTYPE>
+<html>
+<head>
+<title>Console Api</title>
+</head>
+<body>
+<p>使用快捷键ctrl + shift + j，打开控制台</p>
+<script>
+var isCollapsed = true;
+var examples = {};
+var curOpt = null;
+var expand = function() {
+	console.clear();
+	isCollapsed = false;
+	//showAllConsoleApi();
+	if (curOpt && typeof curOpt == 'function')
+		curOpt();
+}
+
+var collapse = function() {
+	console.clear();
+	isCollapsed = true;
+	//showAllConsoleApi();
+	if (curOpt && typeof curOpt == 'function')
+		curOpt();
+}
+
+var showSingleApi = function(str) {
+	console.clear();
+	
+	if (!str || !examples[str] || typeof examples[str] != 'function') {
+		console.warn('输入的api为：%s, 找不到对应的api', str || '空');
+		console.log('%c输出所有api可以输入showAllConsoleApi()', "color:green");
+		return;
+	} 
+	console.log('%c可以输入expand()展开所有节点', "color:green");
+	console.log('%c或输入collapse()收起所有节点', "color:green");
+	console.log('%c输出所有api可以输入showAllConsoleApi()', "color:green");
+		
+	examples[str]();
+	curOpt = arguments.callee.bind(null, str);
+}
+
+var innerGroup = function(str) {
+	if (isCollapsed) {
+		console.groupCollapsed(str);
+	} else {
+		console.group(str);
+	}
+}
+
+var isFun = function(fun) {
+	return fun && typeof fun == 'function';
+}
+
+var formatInputOutput = function(inputStr, outputFun) {
+	innerGroup('输入');
+	logInputStr(inputStr, 'color:gray;');
+	console.groupEnd('input');
+	innerGroup('执行结果');
+	if (isFun(outputFun))
+		outputFun();
+	
+	console.groupEnd();
+}
+
+var logInputStr = function(str, style) {
+	console.log('%c%s', style || 'color:green', str);
+}
+
+var showAllConsoleApi = function() {
+	console.clear();
+	console.log('%c参考地址：%c%s', 'color:orange;font-family:"SimHei"', 'color:blue', 'https://developers.google.com/web/tools/chrome-devtools/debug/console/console-reference?hl=en');
+	console.log('%c更多内容:%c%s', 'color:orange;font-family:"SimHei"', 'color:blue', 'http://www.cnblogs.com/riversHahaha/p/5163372.html')
+	innerGroup('Console Api');
+	logInputStr('可以输入expand()展开所有节点');
+	logInputStr('或输入collapse()收起所有节点');
+	logInputStr("只显示单个api，可以输入showSingleApi()，参数为api名字，如showSingleApi('assert')");
+	innerGroup('Console Object')
+	console.log('先输出console对象，看一下它有什么东西：');
+	console.log('Console:', console);
+	console.groupEnd('Console');
+	
+	for (example in examples) {
+		examples[example]();
+	}
+	
+	console.groupEnd('Console Api');
+	curOpt = arguments.callee;
+}
+
+function template(title, des, example) {
+	innerGroup(title);
+	if (des && typeof des == 'function') {
+		innerGroup('描述');
+		des();
+		console.groupEnd();
+	}
+	if (example && typeof example == 'function') {
+		innerGroup('例子');
+		example();
+		console.groupEnd();
+	}
+	console.groupEnd(title);
+}
+
+function formatFunctionStr(funStr) {
+	return funStr.slice(funStr.indexOf('//start') + 7, funStr.indexOf('//end')).trim();
+}
+
+//assert
+function assertApi() {
+	template('console.assert(expression, object)'
+	, function() {
+		logInputStr('当第一个参数expression求值为false时，输出错误到控制台');
+	}, function() {
+		// todo:函数转字符串这里有点挫。。。。
+		var optFun = function() {
+			//start
+function greaterThan(a, b) {
+	console.assert(a > b, {"message":"a is not greater than b", "a" : a, "b":b});
+}
+greaterThan(5, 6);
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);	
+	});
+}
+examples['assert'] = assertApi;
+
+//clear
+function clearApi() {
+	template('console.clear()'
+	, function() {
+		logInputStr('自行输入console.clear()清空控制台输出');
+		logInputStr('如果Preserve log这个单选框被勾选的话，该指令会无效');
+		logInputStr('这时候可以点击console面板左上角的清除按钮或使用Ctrl + L');
+	});
+}
+examples['clear'] = clearApi;
+
+//count
+function countApi() {
+	//count
+	template('console.count(label)'
+	, function() {
+		logInputStr('输出使用了相同的label(入参)来调用console.count的次数')
+		logInputStr('即计算相同的label被调用了多少次');
+		logInputStr('如果label不传参，则输出某一行调用了console.count()的次数，可以认为label默认值为行号')
+	}, function() {
+		var optFun = function() {
+			//start
+function login(name) {
+	console.count(name + ' logged in');
+	console.count('login函数执行次数');
+}
+
+login('john');
+login('john');
+login('mary');
+login('john');
+console.count();console.count();
+console.count();
+console.count();
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);	
+		logInputStr('可在命令行输入login()自行测试计数')
+	});
+}
+examples['count'] = countApi;
+
+//debug
+function debugApi() {
+	template('console.debug(object[,object,...])'
+	, function(){
+		logInputStr('和console.log()的作用差不多，两者输出对比如下');		
+	}, function() {
+		innerGroup('log 和 debug 对比')
+		formatInputOutput("console.debug('console', 'debug')", function() {
+			console.debug('console', 'debug');
+		});
+		formatInputOutput("console.log('console', 'log')", function() {
+			console.log('console', 'log');
+		});
+		console.groupEnd('compare');
+	});
+}
+examples['debug'] = debugApi;
+
+//dir
+function dirApi() {	
+	template('console.dir(object)'
+	, function() {
+		logInputStr('打印指定object的js表述，如果是一个HTML元素，则会输出它的DOM属性');
+	}, function() {
+		formatInputOutput('console.dir(document)', function() {
+			console.dir(document);
+		});
+	});
+}
+examples['dir'] = dirApi;
+
+//dirxml
+function dirxmlApi() {
+	template('console.dirxml(object)'
+	, function() {
+		logInputStr('用XML的格式打印元素有层级关系的object，如果没有层级关系，则输出object的js表述');
+		logInputStr('对HTML元素和XML使用console.dirxml()与使用console.log()的效果是一样的');
+		
+	}, function() {
+		var optFun = function() {
+			//start
+var obj = {"name" : "obj"};
+console.dirxml(obj);
+var obj2 = document.createElement("TEST");
+obj2.appendChild(document.createElement("NODE"));
+console.dirxml(obj2);
+console.dirxml([1, [2, 3]]);
+console.log([1, [2, 3]]);
+console.dirxml(document.body);
+// 与上面的dirxml结果是一样的
+console.log(document.body);
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+	});
+}
+examples['dirxml'] = dirxmlApi;
+
+//error
+function errorApi() {
+	template('console.error(object[,object,...])'
+	, function() {
+		logInputStr('与console.log()相似，但会带有一个错误样式，并且包含了该方法的调用堆栈');
+	}, function() {
+		var optFun = function() {
+			//start
+function logName(obj) {
+	if (obj.name === undefined)
+		console.error('name is undefined');
+}
+logName({});
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+	});
+}
+examples['error'] = errorApi;
+
+//group
+function groupApi() {
+	template('console.group(object[,object,...])'
+	, function() {
+		logInputStr('我们整个例子用得最多的就是group');
+		logInputStr('用一个可选的标题来新建一个输出组。在console.group()和console.groupEnd()之间的输出信息会被输出到一个组内（看上去是一组的）')
+	}, function() {
+		var optFun = function() {
+			//start
+function name(obj) {
+	console.group('name');
+	console.log('first: ', obj.first);
+	console.log('middle: ', obj.middle);
+	console.log('last: ', obj.last);
+	console.groupEnd();
+}
+name({first : 'Dwyane', middle : 'Tyrone', last : 'Wade'});
+			//end
+		};
+		
+		var nestOptFun = function() {
+			//start
+function name(obj) {
+	console.group('name');
+	console.log('first: ', obj.first);
+	console.log('middle: ', obj.middle);
+	console.log('last: ', obj.last);
+	console.groupEnd();
+}
+function doStuff() {
+	console.group('doStuff()');
+	name({first : 'Dwyane', middle : 'Tyrone', last : 'Wade'});
+	console.groupEnd();
+}
+doStuff();
+			//end
+		};
+		
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+		logInputStr('groups支持嵌套：');
+		funStr = nestOptFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), nestOptFun);
+	});
+}
+examples['group'] = groupApi;
+
+//groupCollapsed
+function groupCollapsedApi() {	
+	template('console.groupCollapsed(object[,object,...])'
+	, function() {
+		logInputStr('由于console.group()是默认把节点展开的，所以提供了这个api使group在初始状态是收起的');
+	}, function() {
+		var optFun = function() {
+			//start
+function name(obj) {
+	console.groupCollapsed('status');
+	console.log("peekaboo, you can't see me", "cant't的单引号要转义,哈哈,peekaboo是什么鬼,什么躲猫猫,我只知道皮卡丘");
+	console.groupEnd();
+}
+name({first : 'Dwyane', middle : 'Tyrone', last : 'Wade'});
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+	});
+}
+examples['groupCollapsed'] = groupCollapsedApi;
+
+//groupEnd
+function groupEndApi() {	
+	template('console.groupEnd()'
+	, function() {
+		logInputStr('用来闭合一个group,这没什么好说的');
+	});
+}
+examples['groupEnd'] = groupEndApi;
+
+//makeTimeline()
+
+//info
+function infoApi() {	
+	template('console.info(object[,object,...])'
+	, function() {
+		logInputStr('和console.log()用法差不多，但会多带一个蓝色图标');
+	}, function() {
+		formatInputOutput("console.info('Here is a infomation')", function() {
+			console.info('Here is a infomation');
+		});
+	});
+}
+examples['info'] = infoApi;
+
+//log
+function logApi() {	
+	template('console.log(object[,object,...])'
+	, function() {
+		logInputStr('console.log()应该是平时用的最多的一个api了');
+		logInputStr('可以传一个或多个参数进行打印，每个参数的求值结果会用空格隔开，然后组成一个字符串')
+		logInputStr('第一个参数可以包含一个或多个格式化标记，每个格式化标记由%百分号加一个字母组成，从而实现格式化输出')
+	}, function() {
+		var optFun = function() {
+			//start
+console.log('Hello, Logs!');
+console.log('Hello,', 'Logs!');
+console.log('%c%s, %s', 'color:gray', 'Hello', 'Logs!');
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+	});
+}
+examples['log'] = logApi;
+
+//profile
+function profileApi() {	
+	template('console.profile([label])'
+	, function() {
+		console.log('');
+	});
+}
+examples['profile'] = profileApi;
+
+//profileEnd
+function profileEndApi() {	
+	template('console.profileEnd()'
+	, function() {
+		console.log('');
+	});
+}
+examples['profileEnd'] = profileEndApi;
+
+//table
+
+//time
+function timeApi() {	
+	template('console.time(label)'
+	, function() {
+		console.log('');
+	});
+}
+examples['time'] = timeApi;
+
+//timeEnd
+function timeEndApi() {	
+	template('console.timeEnd(label)'
+	, function() {
+		console.log('');
+	});
+}
+examples['timeEnd'] = timeEndApi;
+
+//timeStamp
+function timeStampApi() {	
+	template('console.timeStamp([label])'
+	, function() {
+		console.log('');
+	});
+}
+examples['timeStamp'] = timeStampApi;
+
+//timeline
+
+//timelineEnd
+
+//trace
+function traceApi() {	
+	template('console.trace(object)'
+	, function() {
+		logInputStr('输出该函数的调用堆栈')
+	}, function() {
+		var optFun = function() {
+			//start
+function add(num) {
+	if (num > 0) {
+		// you can pass lables and obejcts to trace, too
+		console.trace('recursion is fun:', num);
+		return num + add(num -1 );
+	} else {
+		var obj = {'finnal' : 'ha'};
+		console.trace(obj);
+		return 0;
+	}
+}
+add(3);
+			//end
+		};
+		var funStr = optFun.toString();
+		formatInputOutput(formatFunctionStr(funStr), optFun);
+	});
+}
+examples['trace'] = traceApi;
+
+//warn
+function warnApi() {	
+	template('console.warn(object[,object,...])'
+	, function() {
+		logInputStr('和console.log()用法差不多，但会在消息左边多带一个黄色警告图标');
+	}, function() {
+		formatInputOutput("console.warn('user limit reached')", function() {
+			console.warn('user limit reached');
+		});
+	});
+}
+examples['warn'] = warnApi;
+
+window.onload = function() {
+	showAllConsoleApi();
+}
+
+</script>
+</body>
+</html>
